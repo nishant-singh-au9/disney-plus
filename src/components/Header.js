@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import styled from 'styled-components';
@@ -12,19 +12,40 @@ import {
 
 const Header = (props) => {
     const dispatch = useDispatch()
-    const history = useHistory
+    const history = useHistory()
     const userName = useSelector(selectUserName)
     const userPhoto = useSelector(selectUserPhoto)
 
+    useEffect(() => {
+        auth.onAuthStateChanged(async (user) => {
+          if (user) {
+            setUser(user);
+            history.push("/home");
+          }
+        });
+      });
+
 
     const handleAuth = () => {
-        auth.signInWithPopup(provider)
+        if(!userName){
+            auth.signInWithPopup(provider)
             .then((result) => {
                 setUser(result.user)
             })
             .catch((err) => {
                 alert(err.message)
             })
+        }else if(userName){
+            auth.signOut()
+            .then(() => {
+                dispatch(setSignOutState())
+                history.push('/')
+            })
+            .catch((err) => {
+                if(err) alert(err.message )
+            })
+        }
+        
     }
 
     const setUser = (user) => {
@@ -76,7 +97,12 @@ const Header = (props) => {
                                 <span>SERIES</span>
                             </a>
                         </NavMenu>
-                        <UserImg src={userPhoto} alt="UserPhoto" />
+                        <SignOut>
+                            <UserImg src={userPhoto} alt="UserPhoto" />
+                            <DropDown>
+                                <span onClick={handleAuth}>SignOut</span>
+                            </DropDown>
+                        </SignOut>
                     </>
                 }
             </Nav>
@@ -87,6 +113,46 @@ const Header = (props) => {
 const UserImg = styled.img`
     height: 100%;
 `
+
+const DropDown = styled.div`
+    position: absolute;
+    top: 48px;
+    right: 0px;
+    background: rgb(19, 19, 19);
+    border: 1px solid rgba(151,151,151,0.34);
+    border-radius: 4px;
+    box-shadow: rgb(0 0 0 / 50%) 0px 0px 18px 0px;
+    padding: 10px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    width: 100px;
+    opacity: 0;
+`
+
+const SignOut = styled.div`
+    position: relative;
+    height: 48px;
+    width: 48px;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+
+    ${UserImg}{
+        border-radius: 50%;
+        width: 100%;
+        height: 100%;
+    }
+
+    &:hover{
+        ${DropDown}{
+            opacity: 1;
+            transition-duration: 1s;
+        }
+    }
+`
+
+
 
 
 const Login = styled.a`
